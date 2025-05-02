@@ -26,9 +26,9 @@
                     <label for="role" class="block text-sm font-medium text-gray-700">Role</label>
                     <select id="role" name="role" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                         <option value="">All Roles</option>
-                        {{-- @foreach($roles as $role)
+                        @foreach($roles as $role)
                             <option value="{{ $role->id }}" {{ request('role') == $role->id ? 'selected' : '' }}>{{ $role->name }}</option>
-                        @endforeach --}}
+                        @endforeach
                     </select>
                 </div>
                 <div>

@@ -66,13 +66,79 @@ class AdminController extends Controller
     }
 
     public function getUsers() {
+        $roles = Role::all();
         $users = User::paginate(10);
-        return view('admin.users.users', compact('users'));
+        foreach ($users as $user) {
+            // Remove spaces and convert to lowercase
+            $formattedName = strtolower(str_replace(' ', '', $user->name));
+            
+            // Append length of original name
+            $formattedName = $formattedName . strlen($formattedName);
+    
+            // Generate username (you can modify this logic if needed)
+            $user->username = $formattedName; // Adding random number for uniqueness
+        }
+        return view('admin.users.users', compact('users', 'roles'));
     }
 
     public function create()
     {
         $roles = Role::all();
         return view('admin.users.create', compact('roles'));
+    }
+
+    public function storeUser(Request $request)
+    {
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+            'role_id' => 'required|exists:roles,id',
+        ]);
+
+        $validatedData['password'] = bcrypt($validatedData['password']);
+        $user = User::create($validatedData);
+        $user->roles()->attach($validatedData['role_id']);
+
+        return redirect()->route('admin.users.index')->with('success', 'User created successfully!');
+    }
+
+    public function showUser($id)
+    {
+        $user = User::findOrFail($id);
+        return view('admin.users.show', compact('user'));
+    }
+    public function editUser($id)
+    {
+        $user = User::findOrFail($id);
+        $roles = Role::all();
+        return view('admin.users.edit', compact('user', 'roles'));
+    }
+    public function updateUser(Request $request, $id)
+    {
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $id,
+            'password' => 'nullable|string|min:8|confirmed',
+            'role_id' => 'required|exists:roles,id',
+        ]);
+
+        $user = User::findOrFail($id);
+        if ($request->filled('password')) {
+            $validatedData['password'] = bcrypt($validatedData['password']);
+        } else {
+            unset($validatedData['password']);
+        }
+        $user->update($validatedData);
+        $user->roles()->sync([$validatedData['role_id']]);
+
+        return redirect()->route('admin.users.index')->with('success', 'User updated successfully!');
+    }
+    public function destroyUser($id)
+    {
+        $user = User::findOrFail($id);
+        $user->delete();
+
+        return redirect()->route('admin.users.index')->with('success', 'User deleted successfully!');
     }
 }
